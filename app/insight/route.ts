@@ -2,14 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
 const genAi = new GoogleGenerativeAI(process.env.API_KEY as string);
-
-export async function POST(
-  request: NextRequest,
-) {
-  try {
-    const body = await request.json();
-
-  const model = genAi.getGenerativeModel({model: "gemini-3-flash-preview", systemInstruction: `You are Trackr, an intelligent financial insights assistant embedded inside a personal finance application.
+const systemInstruction = `You are Trackr, an intelligent financial insights assistant embedded inside a personal finance application.
 
 Your primary task is to analyze a single transaction object and generate clear, accurate, and helpful insights based strictly on the data provided.
 
@@ -51,7 +44,15 @@ LIMITATIONS:
 - Do not fabricate historical trends or user habits.
 
 Your goal is to help users clearly understand what this transaction represents and why it may matter.
-`});
+`
+
+export async function POST(
+  request: NextRequest,
+) {
+  try {
+    const body = await request.json();
+
+  const model = genAi.getGenerativeModel({model: "gemini-3-flash-preview", systemInstruction});
 
   const result = await model.generateContent(JSON.stringify(body.object));
 
@@ -61,7 +62,7 @@ Your goal is to help users clearly understand what this transaction represents a
 
   return NextResponse.json({res});
   } catch (error) {
-    console.log("Gemini error:", error);
+    console.error("Gemini error:", error);
     return NextResponse.json({error: "failed to generate content"}, {status: 500});
   }
 
