@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
 const systemInstruction = `
@@ -54,13 +54,55 @@ LIMITATIONS:
 
 const genAi = new GoogleGenerativeAI(process.env.API_KEY as string);
 export async function POST(request:NextRequest) {
+
+    const financialTools = {
+        functionDeclarations: [
+            {
+                name: "getTransactions",
+                description: "Fetches users transactions from the database",
+                parameters: { type: SchemaType.OBJECT, properties: {} }, // Valid Schema
+            },
+            {
+                name: "getUserDetails",
+                description: "Fetches user's details",
+                parameters: { type: SchemaType.OBJECT, properties: {} },
+            },
+            {
+                name: "getBalance",
+                description: "Fetches user's balance without currency",
+                parameters: { type: SchemaType.OBJECT, properties: {} },
+            }
+        ]
+    };
+
     const body = await request.json();
-    const model = genAi.getGenerativeModel({model: "gemini-3-flash-preview", systemInstruction});
+    const model = genAi.getGenerativeModel({model: "gemini-3-flash-preview", systemInstruction, tools: [financialTools]});
     try {
-        const result = await model.generateContent(JSON.stringify(body.message));
+        // const result = await model.generateContent(JSON.stringify(body.message));
+        // console.log(res.text);
+        
+        const chatSession = model.startChat({history: body.message.history});
+        const result = await chatSession.sendMessage(body.message.message);
         const res = await result.response;
-        console.log(res.text);
-        return NextResponse.json({res});
+
+
+        const calls = res.functionCalls();
+        if (calls && calls.length > 0) {
+            return NextResponse.json({
+                type: "function_call",
+                calls
+            })
+        }
+
+
+
+        const textResponse = res.text();
+
+        return NextResponse.json({
+            type: "text",
+            content: textResponse
+        })
+
     } catch (error) {
         console.error("Gemini error:", error);
         return NextResponse.json({error: "failed to generate content"}, {status: 500});
