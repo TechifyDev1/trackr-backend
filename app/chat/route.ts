@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
 const systemInstruction = `
@@ -55,12 +55,12 @@ LIMITATIONS:
 const genAi = new GoogleGenerativeAI(process.env.API_KEY as string);
 export async function POST(request:NextRequest) {
 
-    const financialTools = {
+    const financialTools: Tool = {
         functionDeclarations: [
             {
                 name: "getTransactions",
                 description: "Fetches users transactions from the database",
-                parameters: { type: SchemaType.OBJECT, properties: {} }, // Valid Schema
+                parameters: { type: SchemaType.OBJECT, properties: {} },
             },
             {
                 name: "getUserDetails",
@@ -71,6 +71,51 @@ export async function POST(request:NextRequest) {
                 name: "getBalance",
                 description: "Fetches user's balance without currency",
                 parameters: { type: SchemaType.OBJECT, properties: {} },
+            },
+            {
+                name: "getCards",
+                description: "Fetches all user's card",
+                parameters: { type: SchemaType.OBJECT, properties: {} }
+            },
+            {
+                name: "createTransaction",
+                description: "Create a Transaction/Expense",
+                parameters: {
+                    type: SchemaType.OBJECT, properties: {
+                        title: {
+                            type: SchemaType.STRING,
+                            description: "Title of the transaction/expense"
+                        },
+                        amount: {
+                            type: SchemaType.INTEGER,
+                            description: "Amount of the transaction/expense"
+                        },
+                        category: {
+                            type: SchemaType.STRING,
+                            format: "enum",
+                            enum: ["housing", "utilities", "groceries", "transportation", "healthcare", "dining", "entertainment", "shopping", "miscellaneous"],
+                            description: "The category the Expense/Transaction belongs to"
+                        },
+                        cardId: {
+                            type: SchemaType.STRING,
+                            description: "Id of the card used. (Get all the cards and ask user which one to choose so you can use the id here)"
+                        },
+                        cardDocId: {
+                            type: SchemaType.STRING,
+                            description: "DocId of the card used."
+                        },
+                        notes: {
+                            type: SchemaType.STRING,
+                            description: "Notes for the Expense/Transaction"
+                        },
+                        type: {
+                            type: SchemaType.STRING,
+                            format: "enum",
+                            enum: ["expense", "deposit"],
+                            description: "Type of the Transaction."
+                        },
+                    }
+                }
             }
         ]
     };
@@ -78,9 +123,6 @@ export async function POST(request:NextRequest) {
     const body = await request.json();
     const model = genAi.getGenerativeModel({model: "gemini-3-flash-preview", systemInstruction, tools: [financialTools]});
     try {
-        // const result = await model.generateContent(JSON.stringify(body.message));
-        // console.log(res.text);
-        
         const chatSession = model.startChat({history: body.message.history});
         const result = await chatSession.sendMessage(body.message.message);
         const res = await result.response;
