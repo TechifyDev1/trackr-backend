@@ -116,6 +116,32 @@ export async function POST(request:NextRequest) {
                         },
                     }
                 }
+            },
+            {
+                name: "updateExpense",
+                description: "Update Expense/Transaction (Only the title, amount and notes are editable)",
+                parameters: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        title: {
+                            type: SchemaType.STRING,
+                            description: "Updated title of the expense/transaction"
+                        },
+                        amount: {
+                            type: SchemaType.NUMBER,
+                            description: "Updated amount of the expense/transaction"
+                        },
+                        notes: {
+                            type: SchemaType.STRING,
+                            description: "Updated note for the expense/transaction"
+                        },
+                        expenseId: {
+                            type: SchemaType.STRING,
+                            description: "The id of the expense to update"
+                        }
+                    },
+                    required: ["expenseId"]
+                }
             }
         ]
     };
