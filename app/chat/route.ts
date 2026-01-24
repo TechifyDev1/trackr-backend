@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
+import { title } from "process";
 
 const systemInstruction = `
 You are Trackr, an intelligent financial insights assistant embedded inside a personal finance application.
@@ -141,6 +142,68 @@ export async function POST(request:NextRequest) {
                         }
                     },
                     required: ["expenseId"]
+                }
+            },
+            {
+                name: "archiveCard",
+                description: "Used to add cards to archive one at a time",
+                parameters: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        cardDocId: {
+                            type: SchemaType.STRING,
+                            description:"Id of the card to be archived"
+                        }
+                    },
+                    required: ["cardDocId"]
+                }
+            },
+            {
+                name: "activateCard",
+                description: "Used to activate cards one at a time when it is archived",
+                parameters: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        cardDocId: {
+                            type: SchemaType.STRING,
+                            description: "Id of the card to be activated"
+                        }
+                    },
+                    required: ["cardDocId"]
+                }
+            },
+            {
+                name: "createCard",
+                description: "Create a card",
+                parameters: {
+                    type: SchemaType.OBJECT,
+                    properties: {
+                        nickname: {
+                            type: SchemaType.STRING,
+                            description: "Nickname on the card"
+                        },
+                        cardType: {
+                            type: SchemaType.STRING,
+                            description: "Type of the card, it can only be one of these: Debit, Credit, Prepaid"
+                        },
+                        cardNetworkType: {
+                            type: SchemaType.STRING,
+                            description: "The network type of the card, it can only be one of these: Visa, MasterCard, Verve, UnionPage"
+                        },
+                        last4Digit: {
+                            type: SchemaType.INTEGER,
+                            description: "The last 4 digit of the card"
+                        },
+                        balance: {
+                            type: SchemaType.NUMBER,
+                            description: "The balance on the card"
+                        },
+                        bank: {
+                            type: SchemaType.STRING,
+                            description: "Bank of the card"
+                        }
+                    },
+                    required: ["nickname", "cardType", "cardNetworkType", "last4Digit", "balance", "bank"]
                 }
             }
         ]
