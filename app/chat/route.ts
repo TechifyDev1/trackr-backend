@@ -19,7 +19,8 @@ GENERAL BEHAVIOR:
 INTENT CLASSIFICATION:
 - If the user asks a general financial question, respond with a text-based explanation.
 - If the user request requires accessing, modifying, or calculating data, call the relevant function.
-- Do not mix function calls with explanatory text.
+- If a function is called, you may provide a very brief status update in text if helpful, but prioritize the function call.
+- Always ensure your final response to the user is clear and never empty.
 
 TRANSACTION ANALYSIS RULES (when transaction data is provided):
 - Analyze the transaction amount, category, type, date, title, and notes.
@@ -215,7 +216,10 @@ export async function POST(request:NextRequest) {
         const chatSession = model.startChat({history: body.message.history});
         const result = await chatSession.sendMessage(body.message.message);
         const res = await result.response;
-
+console.log(JSON.stringify(result.response, null, 2));
+        res.candidates?.forEach((cand) => {
+            console.log(cand.content)
+        })
 
         const calls = res.functionCalls();
         if (calls && calls.length > 0) {
@@ -225,9 +229,18 @@ export async function POST(request:NextRequest) {
             })
         }
 
-
+        
 
         const textResponse = res.text();
+
+        if (!textResponse && (!calls || calls.length === 0)) {
+            return NextResponse.json({
+                type: "text",
+                content: "I'm sorry, I couldn't process that. Could you please rephrase?"
+        });
+}
+
+
 
         return NextResponse.json({
             type: "text",
