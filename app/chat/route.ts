@@ -216,10 +216,6 @@ export async function POST(request:NextRequest) {
         const chatSession = model.startChat({history: body.message.history});
         const result = await chatSession.sendMessage(body.message.message);
         const res = await result.response;
-console.log(JSON.stringify(result.response, null, 2));
-        res.candidates?.forEach((cand) => {
-            console.log(cand.content)
-        })
 
         const calls = res.functionCalls();
         if (calls && calls.length > 0) {
